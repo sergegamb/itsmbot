@@ -22,6 +22,8 @@ def main():
     # Регистрация других обработчиков команд
     app.add_handler(CommandHandler("start", start.handle_start))
     # app.add_handler(CommandHandler("newticket", ticket_handlers.create_ticket)) # Removed, as it's now an entry point for ConversationHandler
+    app.add_handler(CommandHandler("mytickets", ticket_handlers.list_my_tickets))
+    app.add_handler(CommandHandler("alltickets", ticket_handlers.list_all_tickets))
 
     # Регистрация обработчиков кнопок
     app.add_handler(CallbackQueryHandler(callback_handlers.handle_button_press))

@@ -11,6 +11,10 @@ def get_all_tickets(db: Session, skip: int = 0, limit: int = 100) -> list[models
     """Retrieves a list of tickets with pagination."""
     return db.query(models.Ticket).offset(skip).limit(limit).all()
 
+def get_tickets_by_user_id_crud(db: Session, user_id: int) -> list[models.Ticket]:
+    """Retrieves all tickets for a specific user ID from the database."""
+    return db.query(models.Ticket).filter(models.Ticket.user_id == user_id).order_by(models.Ticket.created_at.desc()).all()
+
 def save_ticket(db: Session, ticket: models.Ticket) -> models.Ticket:
     """Saves a new ticket to the database."""
     db.add(ticket)

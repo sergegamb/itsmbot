@@ -27,3 +27,11 @@ def assign_ticket(db: Session, ticket_id: int, support_agent_id: int) -> Ticket 
         ticket.support_user_id = support_agent_id  # Use the new field name
         return crud.update_ticket(db=db, ticket_to_update=ticket)
     return None
+
+def get_tickets_by_user_id(db: Session, user_id: int) -> list[Ticket]:
+    """Retrieves all tickets for a specific user ID."""
+    return crud.get_tickets_by_user_id_crud(db=db, user_id=user_id)
+
+def get_all_tickets_service(db: Session, skip: int = 0, limit: int = 100) -> list[Ticket]:
+    """Retrieves all tickets from the system with pagination."""
+    return crud.get_all_tickets(db=db, skip=skip, limit=limit)
