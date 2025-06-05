@@ -28,10 +28,22 @@ def assign_ticket(db: Session, ticket_id: int, support_agent_id: int) -> Ticket 
         return crud.update_ticket(db=db, ticket_to_update=ticket)
     return None
 
-def get_tickets_by_user_id(db: Session, user_id: int) -> list[Ticket]:
+def get_tickets_by_user_id(db: Session, user_id: int, skip: int = 0, limit: int = 10) -> list[Ticket]:
     """Retrieves all tickets for a specific user ID."""
-    return crud.get_tickets_by_user_id_crud(db=db, user_id=user_id)
+    return crud.get_tickets_by_user_id_crud(db=db, user_id=user_id, skip=skip, limit=limit)
+
+def count_tickets_by_user_id(db: Session, user_id: int) -> int:
+    """Counts all tickets for a specific user ID."""
+    return crud.count_tickets_by_user_id(db=db, user_id=user_id)
 
 def get_all_tickets_service(db: Session, skip: int = 0, limit: int = 100) -> list[Ticket]:
     """Retrieves all tickets from the system with pagination."""
     return crud.get_all_tickets(db=db, skip=skip, limit=limit)
+
+def count_all_tickets(db: Session) -> int:
+    """Counts all tickets in the system."""
+    return crud.count_all_tickets(db=db)
+
+def get_ticket_by_id(db: Session, ticket_id: int) -> Ticket | None:
+    """Retrieves a single ticket by its ID."""
+    return crud.get_ticket_by_id(db=db, ticket_id=ticket_id)
