@@ -25,9 +25,11 @@ async def handle_button_press(update, context):
             ticket_service.close_ticket(ticket_id) # Assuming close_ticket exists in ticket_service
             await query.edit_message_text(text=f"Тикет #{ticket_id} закрыт")
     elif action_type == 'view_ticket':
+        # Format: view_ticket:TICKET_ID:ORIGIN:PAGE
         ticket_id = int(parts[1])
-        origin = parts[2] # 'my' or 'all'
-        await display_ticket_details(update, context, ticket_id, origin)
+        origin = parts[2]  # 'my' or 'all'
+        page = int(parts[3])
+        await display_ticket_details(update, context, ticket_id, origin, page)
     elif action_type == 'list_tickets':
         if len(parts) == 3: # Format: list_tickets:ORIGIN:PAGE
             origin = parts[1]

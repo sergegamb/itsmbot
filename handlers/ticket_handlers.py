@@ -4,20 +4,25 @@ from services import ticket_service
 from telegram.ext import ConversationHandler
 from handlers.auth_decorators import registered_user_required, roles_required
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+
+
 TITLE, DESCRIPTION = range(2)
 
 TICKETS_PER_PAGE = 5 # Define how many tickets to show per page
+
 
 async def create_ticket(update, context):
     user = update.message.from_user
     await update.message.reply_text("Введите заголовок тикета:")
     return TITLE
 
+
 async def handle_ticket_title(update, context):
     title = update.message.text
     context.user_data['ticket_title'] = title
     await update.message.reply_text("Опишите проблему:")
     return DESCRIPTION
+
 
 @registered_user_required
 async def handle_ticket_description(update, context):
@@ -44,24 +49,24 @@ async def handle_ticket_description(update, context):
         await update.message.reply_text("Произошла ошибка при создании тикета. Попробуйте позже.")
         return ConversationHandler.END
 
+
 async def cancel_ticket_creation(update, context):
     context.user_data.clear()
     await update.message.reply_text("Создание тикета отменено.")
     return ConversationHandler.END
 
-async def display_ticket_details(update, context, ticket_id: int, origin: str):
+
+async def display_ticket_details(update, context, ticket_id: int, origin: str, page: int):
     """Displays ticket details and a back button."""
     db = context.user_data.get('db_session')
-    # In a real scenario, you'd fetch the ticket details from the DB
-    # For now, let's assume ticket_service.get_ticket_by_id exists
-    ticket = ticket_service.get_ticket_by_id(db, ticket_id) # You'll need to implement this
+    ticket = ticket_service.get_ticket_by_id(db, ticket_id)
 
     if not ticket:
         await update.callback_query.answer("Тикет не найден.", show_alert=True)
         return
 
     text = f"Тикет #{ticket.id}\nЗаголовок: {ticket.title}\nОписание: {ticket.description}\nСтатус: {ticket.status}"
-    keyboard = [[InlineKeyboardButton("Назад к списку", callback_data=f"list_tickets:{origin}")]]
+    keyboard = [[InlineKeyboardButton("Назад к списку", callback_data=f"list_tickets:{origin}:{page}")]]
     await update.callback_query.edit_message_text(text=text, reply_markup=InlineKeyboardMarkup(keyboard))
 
 
@@ -93,7 +98,7 @@ async def _list_tickets_paginated(
         for ticket in tickets_on_page:
             keyboard_buttons.append([InlineKeyboardButton(
                 f"#{ticket.id} - {ticket.title} ({ticket.status})",
-                callback_data=f"view_ticket:{ticket.id}:{callback_origin_slug}"
+                callback_data=f"view_ticket:{ticket.id}:{callback_origin_slug}:{page}"
             )])
 
         nav_buttons = []
