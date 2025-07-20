@@ -7,6 +7,7 @@ class User(Base):
     username = Column(String(100), nullable=True)
     telegram_id = Column(Integer, unique=True)
     role = Column(Enum('user', 'support', 'admin'))  # Роли пользователей
+    technician_id = Column(Integer, nullable=True)  # ID техника, если есть
 
 class Ticket(Base):
     __tablename__ = 'tickets'
