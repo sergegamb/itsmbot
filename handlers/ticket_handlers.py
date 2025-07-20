@@ -1,14 +1,13 @@
 import logging
 
-from services import ticket_service
+from services import ticket_service, ticket_web_service
 from telegram.ext import ConversationHandler
 from handlers.auth_decorators import registered_user_required, roles_required
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from config.settings import TICKETS_PER_PAGE
 
 
 TITLE, DESCRIPTION = range(2)
-
-TICKETS_PER_PAGE = 5 # Define how many tickets to show per page
 
 
 async def create_ticket(update, context):
@@ -59,20 +58,20 @@ async def cancel_ticket_creation(update, context):
 async def display_ticket_details(update, context, ticket_id: int, origin: str, page: int):
     """Displays ticket details and a back button."""
     db = context.user_data.get('db_session')
-    ticket = ticket_service.get_ticket_by_id(db, ticket_id)
+    ticket = ticket_web_service.get_ticket_by_id(ticket_id)
 
     if not ticket:
         await update.callback_query.answer("Тикет не найден.", show_alert=True)
         return
 
-    text = f"Тикет #{ticket.id}\nЗаголовок: {ticket.title}\nОписание: {ticket.description}\nСтатус: {ticket.status}"
+    text = f"Тикет #{ticket.id}\nЗаголовок: {ticket.subject}\nОписание: {ticket.description}\nСтатус: {ticket.status.name}"
     keyboard = [[InlineKeyboardButton("Назад к списку", callback_data=f"list_tickets:{origin}:{page}")]]
     await update.callback_query.edit_message_text(text=text, reply_markup=InlineKeyboardMarkup(keyboard))
 
 
 async def _list_tickets_paginated(
     update, context, page: int, db_user, db,
-    fetch_tickets_callable, count_tickets_callable,
+    fetch_tickets_callable,
     callback_origin_slug: str, base_message_text: str,
     no_items_message: str, error_message_text: str,
     log_identifier: str
@@ -84,8 +83,9 @@ async def _list_tickets_paginated(
 
     try:
         skip = page * TICKETS_PER_PAGE
-        tickets_on_page = await fetch_tickets_callable(db=db, skip=skip, limit=TICKETS_PER_PAGE)
-        total_tickets = await count_tickets_callable(db=db)
+        tickets_response = await fetch_tickets_callable(skip=skip, limit=TICKETS_PER_PAGE)
+        tickets_on_page = tickets_response[2]
+        total_tickets = tickets_response[1].get('total_count', 1000)
 
         if total_tickets == 0:
             if query:
@@ -97,7 +97,7 @@ async def _list_tickets_paginated(
         keyboard_buttons = []
         for ticket in tickets_on_page:
             keyboard_buttons.append([InlineKeyboardButton(
-                f"#{ticket.id} - {ticket.title} ({ticket.status})",
+                f"#{ticket.id} - {ticket.subject} ({ticket.status.name})",
                 callback_data=f"view_ticket:{ticket.id}:{callback_origin_slug}:{page}"
             )])
 
@@ -140,17 +140,13 @@ async def list_my_tickets(update, context, page: int = 0):
         await update.message.reply_text("Произошла системная ошибка. Попробуйте позже.")
         return
 
-    async def fetch_user_tickets(db, skip, limit):
-        return ticket_service.get_tickets_by_user_id(db, user_id=db_user.id, skip=skip, limit=limit)
-
-    async def count_user_tickets(db):
-        return ticket_service.count_tickets_by_user_id(db, user_id=db_user.id)
+    async def fetch_user_tickets(skip, limit):
+        return ticket_web_service.get_tickets_by_technician_id(technician_id=db_user.technician_id, skip=skip, limit=limit)
 
     await _list_tickets_paginated(
         update, context, page,
         db_user=db_user, db=db,
         fetch_tickets_callable=fetch_user_tickets,
-        count_tickets_callable=count_user_tickets,
         callback_origin_slug="my",
         base_message_text="Ваши тикеты",
         no_items_message="У вас пока нет созданных тикетов.",
@@ -171,17 +167,13 @@ async def list_all_tickets(update, context, page: int = 0):
         await update.message.reply_text("Произошла системная ошибка. Попробуйте позже.")
         return
 
-    async def fetch_all_system_tickets(db, skip, limit):
-        return ticket_service.get_all_tickets_service(db, skip=skip, limit=limit)
-
-    async def count_all_system_tickets(db):
-        return ticket_service.count_all_tickets(db)
+    async def fetch_all_system_tickets(skip, limit):
+        return ticket_web_service.get_all_tickets_service(skip=skip, limit=limit)
 
     await _list_tickets_paginated(
         update, context, page,
         db_user=db_user, db=db,
         fetch_tickets_callable=fetch_all_system_tickets,
-        count_tickets_callable=count_all_system_tickets,
         callback_origin_slug="all",
         base_message_text="Все тикеты в системе",
         no_items_message="В системе пока нет тикетов.",
