@@ -10,7 +10,7 @@ async def handle_button_press(update, context):
     data = query.data
     
     # Example: ticket_action:TICKET_ID:ACTION (e.g., ticket_action:123:close)
-    # Example: view_ticket:TICKET_ID:ORIGIN (e.g., view_ticket:123:my or view_ticket:123:all)
+    # Example: view_ticket:TICKET_ID:ORIGIN:PAGE (e.g., view_ticket:123:my:7 or view_ticket:123:all:8)
     # Example: list_tickets:ORIGIN:PAGE (e.g., list_tickets:my:0 or list_tickets:all:1)
 
     parts = data.split(':')
@@ -30,7 +30,7 @@ async def handle_button_press(update, context):
         origin = parts[2]  # 'my' or 'all'
         page = int(parts[3])
         await display_ticket_details(update, context, ticket_id, origin, page)
-    elif action_type == 'list_tickets':
+    elif action_type == 'list_tickets':  #TODO: убрать вложенное ветвление
         if len(parts) == 3: # Format: list_tickets:ORIGIN:PAGE
             origin = parts[1]
             page = int(parts[2])
